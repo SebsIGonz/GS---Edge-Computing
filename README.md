@@ -59,7 +59,7 @@ O **Flood360** é um sistema de monitoramento e alerta de enchentes baseado em *
 ## 🧪 Guia para Simulação no Tinkercad
 
 ### Passo 1: Acessar o Projeto
-1. [Clique aqui para abrir no Tinkercad](#) *(inserir link do projeto)*  
+1. https://www.tinkercad.com/things/i6yCgKLZip9-gs-edge-computing-e-iot?sharecode=6wmxnKptUVFakxhTLsq2chH7uqv3dzkWzT892D_67Gc 
 2. Faça login ou crie uma conta no Tinkercad  
 3. Clique em **"Tinker this"** para editar/simular
 
