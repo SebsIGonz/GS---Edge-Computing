@@ -1,0 +1,324 @@
+#include <LiquidCrystal.h>
+
+// Definição dos pinos utilizados no circuito
+const int trigPin = 8;    // Pino digital 8 conectado ao pino Trigger do sensor ultrassônico
+const int echoPin = 9;    // Pino digital 9 conectado ao pino Echo do sensor ultrassônico
+const int ledA = 13;      // Pino digital 13 conectado ao LED branco (nível seguro)
+const int ledB = 12;      // Pino digital 12 conectado ao LED verde (nível normal)
+const int ledC = 11;      // Pino digital 11 conectado ao LED amarelo (nível de alerta)
+const int ledD = 10;      // Pino digital 10 conectado ao LED vermelho (nível de perigo)
+const int buzzerPin = 7;  // Pino digital 7 conectado ao terminal positivo do buzzer
+const int max_distance = 1000; // Distância máxima considerada válida em centímetros
+
+// Inicialização do objeto LCD com os pinos de interface
+LiquidCrystal lcd(7, 6, 5, 4, 3, 2); // Pinos RS=7, E=6, D4=5, D5=4, D6=3, D7=2 conectados ao LCD
+
+// OPÇÃO 1: Logo simplificada - Gota d'água mais clara
+byte gota[8] = {
+  B00100,  // *
+  B01110,  // ***
+  B01110,  // ***
+  B11111,  // *****
+  B11111,  // *****
+  B11111,  // *****
+  B01110,  // ***
+  B00000   //
+};
+
+// OPÇÃO 2: Logo simplificada - Onda mais clara
+byte onda[8] = {
+  B00000,  //
+  B00000,  //
+  B00000,  //
+  B00100,  // *
+  B01110,  // ***
+  B11111,  // *****
+  B00000,  //
+  B00000   //
+};
+
+// OPÇÃO 3: Logo "F" estilizado para FLOOD360
+byte logoF[8] = {
+  B11111,  // *****
+  B10000,  // *
+  B10000,  // *
+  B11110,  // ****
+  B10000,  // *
+  B10000,  // *
+  B10000,  // *
+  B00000   //
+};
+
+/**
+ * Função para exibir a logo da Flood360 com gota d'água no LCD
+ * Exibe uma gota d'água no centro e o nome da empresa
+ */
+void mostrarLogoGota() {
+  // Cria o caractere personalizado para a gota
+  lcd.createChar(0, gota);
+  
+  // Limpa o display para exibir a logo
+  lcd.clear();
+  
+  // Centraliza a logo e o texto
+  lcd.setCursor(4, 0);
+  lcd.write(byte(0));  // Gota
+  lcd.setCursor(6, 0);
+  lcd.print("FLOOD");
+  lcd.setCursor(6, 1);
+  lcd.print("360");
+  
+  // Aguarda 3 segundos para que o usuário possa ver a logo
+  delay(3000);
+  
+  // Limpa o display para iniciar o monitoramento
+  lcd.clear();
+}
+
+/**
+ * Função para exibir a logo da Flood360 com onda no LCD
+ * Exibe uma onda e o nome da empresa
+ */
+void mostrarLogoOnda() {
+  // Cria o caractere personalizado para a onda
+  lcd.createChar(0, onda);
+  
+  // Limpa o display para exibir a logo
+  lcd.clear();
+  
+  // Centraliza a logo e o texto
+  lcd.setCursor(4, 0);
+  lcd.write(byte(0));  // Onda
+  lcd.setCursor(6, 0);
+  lcd.print("FLOOD");
+  lcd.setCursor(6, 1);
+  lcd.print("360");
+  
+  // Aguarda 3 segundos para que o usuário possa ver a logo
+  delay(3000);
+  
+  // Limpa o display para iniciar o monitoramento
+  lcd.clear();
+}
+
+/**
+ * Função para exibir a logo da Flood360 com "F" estilizado
+ * Exibe um "F" estilizado e o nome da empresa
+ */
+void mostrarLogoF() {
+  // Cria o caractere personalizado para o F estilizado
+  lcd.createChar(0, logoF);
+  
+  // Limpa o display para exibir a logo
+  lcd.clear();
+  
+  // Centraliza a logo e o texto
+  lcd.setCursor(4, 0);
+  lcd.write(byte(0));  // F estilizado
+  lcd.setCursor(6, 0);
+  lcd.print("LOOD");
+  lcd.setCursor(6, 1);
+  lcd.print("360");
+  
+  // Aguarda 3 segundos para que o usuário possa ver a logo
+  delay(3000);
+  
+  // Limpa o display para iniciar o monitoramento
+  lcd.clear();
+}
+
+/**
+ * Função para exibir ícones e informações adicionais de acordo com o LED ativo
+ * Adiciona um caractere especial no canto direito do LCD que varia conforme o nível de alerta
+ * 
+ * @param nivelAlerta O nível atual de alerta (0=seguro, 1=normal, 2=alerta, 3=perigo)
+ */
+void exibirDiferencialLCD(int nivelAlerta) {
+  lcd.setCursor(15, 0); // Posiciona o cursor no último caractere da primeira linha
+  
+  // Seleciona o símbolo apropriado com base no nível de alerta
+  switch(nivelAlerta) {
+    case 0: // Nível seguro (LED branco)
+      lcd.write('~'); // Símbolo de onda suave para indicar água calma
+      break;
+    case 1: // Nível normal (LED verde)
+      lcd.write('>'); // Símbolo de fluxo normal para indicar movimento controlado
+      break;
+    case 2: // Nível de alerta (LED amarelo)
+      lcd.write('!'); // Símbolo de exclamação para indicar atenção
+      break;
+    case 3: // Nível de perigo (LED vermelho)
+      // Alterna entre símbolos para chamar mais atenção em situação crítica
+      static bool alternarSimbolo = false;
+      lcd.write(alternarSimbolo ? '!' : '*'); // Alterna entre exclamação e asterisco
+      alternarSimbolo = !alternarSimbolo;     // Inverte o estado para a próxima vez
+      break;
+    default:
+      lcd.write(' '); // Espaço em branco para outros casos (fora de alcance)
+  }
+}
+
+void setup() {
+  // Configuração dos pinos como entrada ou saída
+  pinMode(ledA, OUTPUT);      // Configura o pino do LED branco como saída
+  pinMode(ledB, OUTPUT);      // Configura o pino do LED verde como saída
+  pinMode(ledC, OUTPUT);      // Configura o pino do LED amarelo como saída
+  pinMode(ledD, OUTPUT);      // Configura o pino do LED vermelho como saída
+  pinMode(trigPin, OUTPUT);   // Configura o pino Trigger do sensor como saída
+  pinMode(echoPin, INPUT);    // Configura o pino Echo do sensor como entrada
+  pinMode(buzzerPin, OUTPUT); // Configura o pino do buzzer como saída
+  
+  lcd.begin(16, 2);           // Inicializa o LCD com 16 colunas e 2 linhas
+  
+  // Escolha qual logo exibir na inicialização (descomente apenas uma das linhas abaixo)
+  mostrarLogoGota();          // Exibe a logo com gota d'água
+  //mostrarLogoOnda();        // Exibe a logo com onda
+  //mostrarLogoF();           // Exibe a logo com F estilizado
+  
+  // Após exibir a logo, prepara o display para o monitoramento
+  lcd.setCursor(0, 0);
+  lcd.print("Iniciando...");  // Mensagem de inicialização do sistema
+  delay(1000);                // Aguarda 1 segundo para mostrar a mensagem
+  lcd.clear();                // Limpa o display
+  lcd.print("Distancia:");    // Imprime o texto inicial "Distancia:" no LCD
+}
+
+void loop() {
+  // Declaração de variáveis para armazenar a duração do pulso e a distância calculada
+  long duration, cm;
+  int nivelAlerta = -1; // Variável para controlar o nível de alerta atual (-1 = indefinido)
+  
+  // Sequência para enviar um pulso ultrassônico
+  digitalWrite(trigPin, LOW);    // Garante que o pino Trigger está desligado
+  delayMicroseconds(2);          // Aguarda 2 microssegundos
+  digitalWrite(trigPin, HIGH);   // Liga o pino Trigger para enviar o pulso
+  delayMicroseconds(10);         // Mantém o pulso por 10 microssegundos
+  digitalWrite(trigPin, LOW);    // Desliga o pino Trigger após enviar o pulso
+  
+  // Mede o tempo que o pulso leva para retornar ao sensor
+  duration = pulseIn(echoPin, HIGH); // Lê o tempo em microssegundos
+  
+  // Calcula a distância em centímetros usando a velocidade do som (34000 cm/s)
+  cm = duration * 0.034 / 2; // Divide por 2 porque o pulso vai e volta
+  
+  // Verifica se a distância está dentro do intervalo válido
+  if (cm >= 0 && cm < max_distance) {
+    // Atualiza o display LCD com a nova distância medida
+    lcd.setCursor(0, 1);           // Posiciona o cursor na primeira coluna da segunda linha
+    lcd.print("               ");  // Limpa a linha inteira com espaços em branco
+    lcd.setCursor(0, 1);           // Reposiciona o cursor no início da segunda linha
+    
+    // Exibe a distância medida no LCD com texto reduzido para garantir espaço para "cm"
+    lcd.print("Dist: ");           // Texto reduzido de "Distancia:" para "Dist:" para economizar espaço
+    lcd.print(cm);                 // Imprime o valor da distância em centímetros
+    lcd.print(" cm");              // Imprime a unidade de medida "cm" (agora com espaço garantido)
+
+    // Verifica em qual faixa de distância o valor se encontra e atualiza os LEDs e mensagens
+    if (cm >= 181) {
+      // Distância muito grande - Nível seguro
+      digitalWrite(ledA, HIGH);    // Liga o LED branco
+      digitalWrite(ledB, LOW);     // Desliga o LED verde
+      digitalWrite(ledC, LOW);     // Desliga o LED amarelo
+      digitalWrite(ledD, LOW);     // Desliga o LED vermelho
+      lcd.setCursor(0, 0);         // Posiciona o cursor na primeira coluna da primeira linha
+      lcd.print("Nivel Seguro    "); // Exibe mensagem de nível seguro com espaços para limpar
+      nivelAlerta = 0;             // Define o nível de alerta como seguro para o diferencial LCD
+    } else if (cm >= 136 && cm <= 180) {
+      // Distância grande - Nível normal
+      digitalWrite(ledA, LOW);     // Desliga o LED branco
+      digitalWrite(ledB, HIGH);    // Liga o LED verde
+      digitalWrite(ledC, LOW);     // Desliga o LED amarelo
+      digitalWrite(ledD, LOW);     // Desliga o LED vermelho
+      lcd.setCursor(0, 0);         // Posiciona o cursor na primeira coluna da primeira linha
+      lcd.print("Nivel Normal    "); // Exibe mensagem de nível normal com espaços para limpar
+      nivelAlerta = 1;             // Define o nível de alerta como normal para o diferencial LCD
+    } else if (cm >= 91 && cm <= 135) {
+      // Distância média - Acima do normal
+      digitalWrite(ledA, LOW);     // Desliga o LED branco
+      digitalWrite(ledB, LOW);     // Desliga o LED verde
+      digitalWrite(ledC, HIGH);    // Liga o LED amarelo
+      digitalWrite(ledD, LOW);     // Desliga o LED vermelho
+      lcd.setCursor(0, 0);         // Posiciona o cursor na primeira coluna da primeira linha
+      lcd.print("Acima do Normal "); // Exibe mensagem de nível acima do normal com espaços
+      nivelAlerta = 2;             // Define o nível de alerta como acima do normal para o diferencial LCD
+    } else if (cm >= 46 && cm <= 90) {
+      // Distância pequena - Nível de alerta
+      digitalWrite(ledA, LOW);     // Desliga o LED branco
+      digitalWrite(ledB, LOW);     // Desliga o LED verde
+      digitalWrite(ledC, LOW);     // Desliga o LED amarelo
+      digitalWrite(ledD, HIGH);    // Liga o LED vermelho
+      lcd.setCursor(0, 0);         // Posiciona o cursor na primeira coluna da primeira linha
+      lcd.print("Nivel de Alerta "); // Exibe mensagem de nível de alerta com espaços
+      nivelAlerta = 3;             // Define o nível de alerta como alerta para o diferencial LCD
+      
+      // Ativa o buzzer a cada 10 segundos no nível de alerta
+      static unsigned long ultimoBip = 0;      // Armazena o tempo do último bipe
+      unsigned long tempoAtual = millis();     // Obtém o tempo atual em milissegundos
+      if (tempoAtual - ultimoBip >= 10000) {   // Verifica se passaram 10 segundos
+        digitalWrite(buzzerPin, HIGH);         // Ativa o buzzer
+        delay(500);                            // Som por 0,5 segundo
+        digitalWrite(buzzerPin, LOW);          // Desativa o buzzer
+        ultimoBip = tempoAtual;                // Atualiza o tempo do último bipe
+      }
+    } else if (cm >= 0 && cm <= 45) {
+      // Distância muito pequena - Alerta vermelho
+      digitalWrite(ledA, LOW);     // Desliga o LED branco
+      digitalWrite(ledB, LOW);     // Desliga o LED verde
+      digitalWrite(ledC, LOW);     // Desliga o LED amarelo
+      digitalWrite(ledD, HIGH);    // Liga o LED vermelho
+      
+      // Alterna entre mensagens de evacuação e perigo para chamar atenção
+      static bool alternarMensagem = false;       // Controla qual mensagem exibir
+      static unsigned long ultimaAlternancia = 0; // Armazena o tempo da última alternância
+      unsigned long tempoAtual = millis();        // Obtém o tempo atual em milissegundos
+      
+      // Alterna as mensagens a cada 2 segundos para maior impacto visual
+      if (tempoAtual - ultimaAlternancia >= 2000) { // Verifica se passaram 2 segundos
+        lcd.setCursor(0, 0);
+        if (alternarMensagem) {
+          lcd.print("!!! EVACUAR !!! "); // Mensagem de evacuação com espaços
+        } else {
+          lcd.print("!!! PERIGO !!! "); // Mensagem de perigo com espaços
+        }
+        alternarMensagem = !alternarMensagem;     // Inverte para a próxima mensagem
+        ultimaAlternancia = tempoAtual;           // Atualiza o tempo da última alternância
+      }
+      
+      nivelAlerta = 3;             // Define o nível de alerta como perigo para o diferencial LCD
+      digitalWrite(buzzerPin, HIGH); // Ativa o buzzer continuamente em situação de perigo
+    } else {
+      // Valor fora das faixas definidas - Fora de alcance
+      digitalWrite(ledA, LOW);     // Desliga o LED branco
+      digitalWrite(ledB, LOW);     // Desliga o LED verde
+      digitalWrite(ledC, LOW);     // Desliga o LED amarelo
+      digitalWrite(ledD, LOW);     // Desliga o LED vermelho
+      lcd.setCursor(0, 0);         // Posiciona o cursor na primeira coluna da primeira linha
+      lcd.print("Fora de Alcance "); // Exibe mensagem de fora de alcance com espaços
+      nivelAlerta = -1;            // Define o nível de alerta como indefinido para o diferencial LCD
+      digitalWrite(buzzerPin, LOW); // Desativa o buzzer
+    }
+    
+    // Exibe o diferencial no LCD de acordo com o nível de alerta atual
+    exibirDiferencialLCD(nivelAlerta);
+    
+  } else {
+    // Distância inválida (negativa ou maior que max_distance)
+    lcd.setCursor(0, 0);           // Posiciona o cursor na primeira coluna da primeira linha
+    lcd.print("Fora de Alcance "); // Exibe mensagem de fora de alcance com espaços
+    lcd.setCursor(0, 1);           // Posiciona o cursor na primeira coluna da segunda linha
+    lcd.print("               ");  // Limpa a linha inteira com espaços em branco
+    
+    // Desliga todos os LEDs
+    digitalWrite(ledA, LOW);       // Desliga o LED branco
+    digitalWrite(ledB, LOW);       // Desliga o LED verde
+    digitalWrite(ledC, LOW);       // Desliga o LED amarelo
+    digitalWrite(ledD, LOW);       // Desliga o LED vermelho
+    
+    digitalWrite(buzzerPin, LOW);  // Desativa o buzzer
+    
+    // Exibe o diferencial para fora de alcance
+    exibirDiferencialLCD(-1);
+  }
+
+  delay(100); // Aguarda 100 milissegundos antes de iniciar uma nova leitura
+}
