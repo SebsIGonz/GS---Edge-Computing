@@ -59,13 +59,15 @@ O **Flood360** é um sistema de monitoramento e alerta de enchentes baseado em *
 ## 🧪 Guia para Simulação no Tinkercad
 
 ### Passo 1: Acessar o Projeto
-1. https://www.tinkercad.com/things/i6yCgKLZip9-gs-edge-computing-e-iot?sharecode=6wmxnKptUVFakxhTLsq2chH7uqv3dzkWzT892D_67Gc 
+1. https://www.tinkercad.com/things/4AausHw8A5O-gs-edge-computing-e-iot?sharecode=4qm6pzGXqzPYyh4THnVr1Y5vqGG-YAjmrjNlzHC6qlo
 2. Faça login ou crie uma conta no Tinkercad  
 3. Clique em **"Tinker this"** para editar/simular
 
 ---
 
 ### Passo 2: Entendendo o Circuito
+
+- Imagem Circuito: ![GS - Edge Computing e IoT](https://github.com/user-attachments/assets/900d8555-bcdb-4fea-ab0c-099d807cbbe9)
 
 - **Arduino Uno**: Placa principal  
 - **Sensor Ultrassônico HC-SR04**:  
@@ -79,7 +81,8 @@ O **Flood360** é um sistema de monitoramento e alerta de enchentes baseado em *
   - Amarelo (Acima do normal) → Pino 11  
   - Vermelho (Alerta/Perigo) → Pino 10  
 - **Buzzer**: Pino 7  
-![image](https://github.com/user-attachments/assets/37b7dc68-86d6-47eb-9b77-7784f0f0e927)
+
+
 
 ---
 
